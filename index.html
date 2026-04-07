@@ -966,15 +966,28 @@
       }
       if (!startTime) return;
 
+      // ⏸️ Detener inmediatamente la jornada en la UI
       const endTime = new Date();
       const totalSec = Math.floor((endTime - startTime) / 1000);
       const durStr   = formatDuration(totalSec);
+      const savedStartTime = new Date(startTime); // Guardar copia
+
+      // Limpiar estado INMEDIATAMENTE
+      stopTimer();
+      clearInterval(reminderInterval);
+      startTime = null;
+      localStorage.removeItem('jornadaStart');
+      $('description').value = '';
+      updateChar();
+      updateUI(false);
+
+      showToast('⏳ Guardando jornada...', 'info');
 
       try {
         await addDoc(collection(db, 'jornadas'), {
           uid:         currentUser.uid,
           email:       currentUser.email,
-          startAt:     Timestamp.fromDate(startTime),
+          startAt:     Timestamp.fromDate(savedStartTime),
           endAt:       Timestamp.fromDate(endTime),
           description: desc,
           durationSec: totalSec,
@@ -982,21 +995,30 @@
           createdAt:   Timestamp.now()
         });
 
-        // Limpiar estado
-        stopTimer();
-        clearInterval(reminderInterval);
-        startTime = null;
-        localStorage.removeItem('jornadaStart');
-        $('description').value = '';
-        updateChar();
-        updateUI(false);
-
         showToast(`✅ Jornada guardada — ${durStr} registradas`, 'success');
         notify('Jornada finalizada', `Trabajaste ${durStr} hoy. ¡Bien hecho!`);
 
-        await loadHistorial();
+        // Recargar historial después de 1 segundo
+        setTimeout(() => loadHistorial(), 1000);
       } catch (e) {
-        showToast('Error al guardar: ' + e.message, 'error');
+        showToast('❌ Error al guardar: ' + e.message, 'error');
+        console.error('Error Firebase:', e);
+        // Intentar de nuevo automáticamente
+        setTimeout(() => {
+          addDoc(collection(db, 'jornadas'), {
+            uid:         currentUser.uid,
+            email:       currentUser.email,
+            startAt:     Timestamp.fromDate(savedStartTime),
+            endAt:       Timestamp.fromDate(endTime),
+            description: desc,
+            durationSec: totalSec,
+            duration:    durStr,
+            createdAt:   Timestamp.now()
+          }).then(() => {
+            showToast('✅ Jornada guardada (reintento)', 'success');
+            loadHistorial();
+          }).catch(err => console.error('Reintento falló:', err));
+        }, 2000);
       }
     };
 
