@@ -11,12 +11,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  
-  <!-- Google Fonts Modernas -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
-
   <style>
     /* ═══════════════════════════════════════════════════════════════
        VARIABLES GLOBALES
@@ -837,7 +831,7 @@
     import { initializeApp }            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, Timestamp }
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, Timestamp, doc, deleteDoc }
                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     /* ─────────────────────────────────────────────────────────────
@@ -1006,6 +1000,17 @@
       }
     };
 
+    window.deleteJornada = async (docId) => {
+      if (!confirm('¿Estás seguro de que quieres eliminar esta jornada? Esta acción no se puede deshacer.')) return;
+      try {
+        await deleteDoc(doc(db, 'jornadas', docId));
+        showToast('✅ Jornada eliminada', 'success');
+        await loadHistorial();
+      } catch (e) {
+        showToast('Error al eliminar: ' + e.message, 'error');
+      }
+    };
+
     /* ═══════════════════════════════════════════════════════════════
        CRONÓMETRO
     ═══════════════════════════════════════════════════════════════ */
@@ -1041,7 +1046,7 @@
         );
         const snap = await getDocs(q);
         const records = [];
-        snap.forEach(doc => records.push(doc.data()));
+        snap.forEach(docSnap => records.push({ ...docSnap.data(), docId: docSnap.id }));
         renderHistorial(records);
         renderStats(records);
       } catch (e) {
@@ -1065,14 +1070,21 @@
         const start = r.startAt.toDate();
         const end   = r.endAt.toDate();
         return `
-        <div class="record" style="animation-delay:${i * 0.05}s">
+        <div class="record" style="animation-delay:${i * 0.05}s" data-id="${r.docId}">
           <div class="record-top">
-            <div class="record-date">${fmtDate(start)}</div>
-            <div class="record-duration">${r.duration}</div>
-          </div>
-          <div class="record-times">
-            <span>▶ ${fmtTime(start)}</span>
-            <span>⏹ ${fmtTime(end)}</span>
+            <div>
+              <div class="record-date">${fmtDate(start)}</div>
+              <div class="record-times">
+                <span>▶ ${fmtTime(start)}</span>
+                <span>⏹ ${fmtTime(end)}</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <div class="record-duration">${r.duration}</div>
+              <button class="btn btn-sm btn-ghost" title="Eliminar" onclick="deleteJornada('${r.docId}')" style="padding:6px 10px; color:#ff4b6e;">
+                🗑️
+              </button>
+            </div>
           </div>
           <div class="record-desc">${escapeHtml(r.description)}</div>
         </div>`;
