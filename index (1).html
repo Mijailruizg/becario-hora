@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Becario Track · Sistema de Jornadas</title>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FUENTES
+  ═══════════════════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       VARIABLES GLOBALES
+    ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --bg:        #0a0c10;
+      --surface:   #10141c;
+      --card:      #141922;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #00e5a0;
+      --accent2:   #0066ff;
+      --danger:    #ff4b6e;
+      --warn:      #ffb020;
+      --text:      #e8edf5;
+      --muted:     #5a6478;
+      --radius:    16px;
+      --mono:      'DM Mono', monospace;
+      --sans:      'Syne', sans-serif;
+      --body:      'Inter', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Fondo animado */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 10% 20%, rgba(0,229,160,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 90% 80%, rgba(0,102,255,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,75,110,0.03) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Grid de puntos sutil */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PANTALLA DE LOGIN
+    ═══════════════════════════════════════════════════════════════ */
+    #loginScreen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      background: var(--bg);
+    }
+
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 56px 48px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    }
+
+    .login-logo {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+
+    .login-title {
+      font-family: var(--sans);
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .login-title span { color: var(--accent); }
+
+    .login-sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BOTONES
+    ═══════════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover::after { opacity: 0.06; }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-google {
+      background: #fff;
+      color: #1a1a2e;
+      width: 100%;
+      font-family: var(--body);
+      font-weight: 500;
+      font-size: 15px;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    .btn-google:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #00b87a);
+      color: #001a0f;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover { box-shadow: 0 0 24px rgba(0,229,160,0.3); }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #c4003a);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .btn-danger:hover { box-shadow: 0 0 24px rgba(255,75,110,0.3); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    .btn-sm { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       APP PRINCIPAL
+    ═══════════════════════════════════════════════════════════════ */
+    #app {
+      display: none;
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10,12,16,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .topbar-brand {
+      font-family: var(--sans);
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-brand .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 6px 14px 6px 8px;
+    }
+
+    .user-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #001a0f;
+      flex-shrink: 0;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: grid;
+      gap: 24px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .card:hover { border-color: rgba(255,255,255,0.12); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── CRONÓMETRO ── */
+    .clock-card {
+      background: linear-gradient(135deg, #0f1a14 0%, #0c1420 100%);
+      border-color: rgba(0,229,160,0.15);
+    }
+
+    .clock-card.active {
+      border-color: rgba(0,229,160,0.4);
+      box-shadow: 0 0 40px rgba(0,229,160,0.08), inset 0 0 40px rgba(0,229,160,0.03);
+    }
+
+    .clock-card.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    .clock-display {
+      font-family: var(--mono);
+      font-size: clamp(48px, 10vw, 80px);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      text-shadow: 0 0 40px rgba(0,229,160,0.3);
+      line-height: 1;
+      margin: 12px 0 8px;
+    }
+
+    .clock-display.inactive {
+      color: var(--muted);
+      text-shadow: none;
+    }
+
+    .clock-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.1em;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge.running {
+      background: rgba(0,229,160,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(0,229,160,0.25);
+    }
+
+    .status-badge.stopped {
+      background: rgba(90,100,120,0.15);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-badge.running .status-dot { animation: pulse 1.5s infinite; }
+
+    .clock-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .clock-info {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+
+    .clock-info.visible { display: block; }
+    .clock-info span { color: var(--text); }
+
+    /* ── DESCRIPCIÓN ── */
+    .textarea-wrap {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 16px;
+      resize: vertical;
+      min-height: 110px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    textarea:focus {
+      border-color: rgba(0,229,160,0.4);
+      box-shadow: 0 0 0 3px rgba(0,229,160,0.06);
+    }
+
+    .char-count {
+      position: absolute;
+      bottom: 10px; right: 14px;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+      pointer-events: none;
+    }
+
+    /* ── HISTORIAL ── */
+    .history-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .history-empty .icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+
+    .record {
+      padding: 20px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .record:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    .record-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .record-date {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .record-duration {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      background: rgba(0,229,160,0.1);
+      padding: 3px 10px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .record-times {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .record-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    /* ── TOAST NOTIFICACIONES ── */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 13px;
+      max-width: 320px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: toastIn 0.35s ease both;
+      pointer-events: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toast.success { border-left: 3px solid var(--accent); }
+    .toast.error   { border-left: 3px solid var(--danger); }
+    .toast.info    { border-left: 3px solid var(--accent2); }
+    .toast.warn    { border-left: 3px solid var(--warn); }
+
+    .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .toast-msg  { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+    .toast.out { animation: toastOut 0.3s ease forwards; }
+
+    /* ── LOADING OVERLAY ── */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ── ESTADÍSTICAS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 20px 16px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .topbar { padding: 0 16px; }
+      .user-email { display: none; }
+      .main { padding: 24px 16px 80px; }
+      .card { padding: 20px; }
+      .clock-actions { flex-direction: column; }
+      .clock-actions .btn { width: 100%; }
+      #toastContainer { bottom: 16px; right: 16px; left: 16px; }
+      .toast { max-width: 100%; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANIMACIONES
+    ═══════════════════════════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+      50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(0,229,160,0); }
+    }
+
+    @keyframes shimmer {
+      0%   { opacity: 0.4; }
+      50%  { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(20px); }
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LOADING
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="loadingOverlay">
+    <div style="text-align:center">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">cargando sistema…</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PANTALLA DE LOGIN
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="loginScreen" style="display:none">
+    <div class="login-card">
+      <div class="login-logo">⬡ Becario Track</div>
+      <h1 class="login-title">Registra tu<br><span>jornada</span></h1>
+      <p class="login-sub">Sistema de control de horas para becarios.<br>Inicia sesión con tu cuenta institucional.</p>
+      <button class="btn btn-google" onclick="loginGoogle()">
+        <!-- Ícono Google SVG inline -->
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continuar con Google
+      </button>
+      <p style="margin-top:20px;font-size:11px;color:var(--muted)">
+        Tus datos se guardan de forma segura en Firebase
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       APP PRINCIPAL
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="app">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="dot"></span>
+        Becario Track
+      </div>
+      <div class="topbar-right">
+        <div class="user-pill">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <span class="user-email" id="userEmail">—</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main">
+
+      <!-- ── CRONÓMETRO / CONTROL ── -->
+      <div class="card clock-card" id="clockCard">
+        <div class="card-header" style="margin-bottom:8px">
+          <span class="card-title">Jornada activa</span>
+          <div class="status-badge stopped" id="statusBadge">
+            <span class="status-dot"></span>
+            <span id="statusText">Sin iniciar</span>
+          </div>
+        </div>
+
+        <div class="clock-display inactive" id="clockDisplay">00:00:00</div>
+        <div class="clock-label" id="clockLabel">Tiempo transcurrido</div>
+
+        <div class="clock-info" id="clockInfo">
+          Inicio: <span id="startTimeLabel">—</span>
+        </div>
+
+        <div class="clock-actions">
+          <button class="btn btn-primary" id="btnStart" onclick="startJornada()">
+            ▷&nbsp; Iniciar jornada
+          </button>
+          <button class="btn btn-ghost" id="btnNotify" onclick="requestNotifPerms()" style="display:none">
+            🔔&nbsp; Activar notificaciones
+          </button>
+        </div>
+      </div>
+
+      <!-- ── FINALIZAR JORNADA ── -->
+      <div class="card" id="finishCard" style="display:none">
+        <div class="card-header">
+          <span class="card-title">Finalizar jornada</span>
+        </div>
+
+        <div class="textarea-wrap">
+          <textarea
+            id="description"
+            placeholder="Describe lo que realizaste hoy: tareas completadas, avances, aprendizajes…"
+            maxlength="1000"
+            oninput="updateChar()"
+          ></textarea>
+          <span class="char-count" id="charCount">0/1000</span>
+        </div>
+
+        <div style="margin-top:16px">
+          <button class="btn btn-danger" onclick="finishJornada()">
+            ⏹&nbsp; Finalizar y guardar
+          </button>
+        </div>
+      </div>
+
+      <!-- ── ESTADÍSTICAS ── -->
+      <div class="card" id="statsCard" style="display:none">
+        <div class="card-header">
+          <span class="card-title">Resumen</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Jornadas</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statHours">0h</div>
+            <div class="stat-label">Horas totales</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statAvg">0h</div>
+            <div class="stat-label">Promedio / día</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORIAL ── -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Historial de jornadas</span>
+          <span id="histCount" style="font-family:var(--mono);font-size:12px;color:var(--muted)">0 registros</span>
+        </div>
+        <div id="historialList">
+          <div class="history-empty">
+            <div class="icon">📋</div>
+            Aún no tienes jornadas registradas.<br>¡Inicia tu primera jornada!
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ▼▼▼  FIREBASE CONFIG — PEGA AQUÍ TU CONFIGURACIÓN  ▼▼▼
+       Obtén estos datos en: Firebase Console → Tu proyecto →
+       Project settings → Your apps → Add app (Web) → Config
+  ═══════════════════════════════════════════════════════════════ -->
+  <script type="module">
+    import { initializeApp }            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+                                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, Timestamp }
+                                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    /* ─────────────────────────────────────────────────────────────
+       🔥 CONFIGURACIÓN DE FIREBASE  ← REEMPLAZA CON LA TUYA
+       ─────────────────────────────────────────────────────────────
+       Pasos:
+       1. Ve a https://console.firebase.google.com
+       2. Crea un proyecto (o usa uno existente)
+       3. Project Settings (⚙️) → General → Tu app web (o añade una nueva)
+       4. Copia el objeto firebaseConfig y pégalo AQUÍ abajo
+       5. En Firebase Console activa:
+          - Authentication → Sign-in providers → Google ✅
+          - Firestore Database → Crear base de datos (modo producción)
+          - Firestore → Reglas: permití escritura sólo a usuarios auth
+    ───────────────────────────────────────────────────────────── */
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAHfXtvFJlWQ3Q7vjWtHH6lKk6QGBCpn_o",
+      authDomain:        "becario-hora.firebaseapp.com",
+      projectId:         "becario-hora",
+      storageBucket:     "becario-hora.firebasestorage.app",
+      messagingSenderId: "91704410603",
+      appId:             "1:91704410603:web:fa6c256ed0fcd9615499ae"
+    };
+    /* ──────────────────────────────────────────────────────────── */
+
+    // ── Inicialización Firebase ──
+    const fbApp  = initializeApp(firebaseConfig);
+    const auth   = getAuth(fbApp);
+    const db     = getFirestore(fbApp);
+    const provider = new GoogleAuthProvider();
+
+    // ── Estado global ──
+    let currentUser  = null;
+    let timerInterval = null;
+    let reminderInterval = null;
+    let startTime    = null;          // Date object
+    const REMINDER_MS = 30 * 60 * 1000; // 30 min
+
+    // ── Referencias DOM ──
+    const $  = id => document.getElementById(id);
+    const loading     = $('loadingOverlay');
+    const loginScreen = $('loginScreen');
+    const appEl       = $('app');
+    const clockDisplay = $('clockDisplay');
+    const clockCard    = $('clockCard');
+    const finishCard   = $('finishCard');
+    const statsCard    = $('statsCard');
+    const statusBadge  = $('statusBadge');
+    const statusText   = $('statusText');
+    const btnStart     = $('btnStart');
+
+    /* ═══════════════════════════════════════════════════════════════
+       AUTENTICACIÓN
+    ═══════════════════════════════════════════════════════════════ */
+    // Exponer al HTML global scope
+    window.loginGoogle = async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        showToast('No se pudo iniciar sesión: ' + e.message, 'error');
+      }
+    };
+
+    window.logout = async () => {
+      stopTimer();
+      clearInterval(reminderInterval);
+      await signOut(auth);
+      localStorage.removeItem('jornadaStart');
+    };
+
+    // Escuchar cambios de auth
+    onAuthStateChanged(auth, async user => {
+      loading.style.display = 'none';
+      if (user) {
+        currentUser = user;
+        loginScreen.style.display = 'none';
+        appEl.style.display = 'block';
+        // Avatar + email
+        $('userAvatar').textContent = user.displayName ? user.displayName[0].toUpperCase() : '?';
+        $('userEmail').textContent  = user.email;
+        // Restaurar jornada activa desde localStorage
+        restoreJornada();
+        // Cargar historial
+        await loadHistorial();
+        // Pedir permiso notificaciones
+        if (Notification.permission === 'default') {
+          $('btnNotify').style.display = 'inline-flex';
+        }
+      } else {
+        currentUser = null;
+        appEl.style.display = 'none';
+        loginScreen.style.display = 'flex';
+      }
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       JORNADA — INICIO
+    ═══════════════════════════════════════════════════════════════ */
+    window.startJornada = () => {
+      if (startTime) return; // ya está corriendo
+
+      startTime = new Date();
+      localStorage.setItem('jornadaStart', startTime.toISOString());
+
+      updateUI(true);
+      startTimer();
+      startReminder();
+
+      showToast('🟢 Jornada iniciada. ¡Mucho éxito!', 'success');
+      notify('Jornada iniciada', 'El cronómetro está corriendo ⏱');
+    };
+
+    function restoreJornada() {
+      const saved = localStorage.getItem('jornadaStart');
+      if (saved) {
+        startTime = new Date(saved);
+        updateUI(true);
+        startTimer();
+        startReminder();
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       JORNADA — FIN
+    ═══════════════════════════════════════════════════════════════ */
+    window.finishJornada = async () => {
+      const desc = $('description').value.trim();
+      if (!desc) {
+        showToast('Por favor escribe una descripción de lo realizado.', 'error');
+        $('description').focus();
+        return;
+      }
+      if (!startTime) return;
+
+      const endTime = new Date();
+      const totalSec = Math.floor((endTime - startTime) / 1000);
+      const durStr   = formatDuration(totalSec);
+
+      try {
+        await addDoc(collection(db, 'jornadas'), {
+          uid:         currentUser.uid,
+          email:       currentUser.email,
+          startAt:     Timestamp.fromDate(startTime),
+          endAt:       Timestamp.fromDate(endTime),
+          description: desc,
+          durationSec: totalSec,
+          duration:    durStr,
+          createdAt:   Timestamp.now()
+        });
+
+        // Limpiar estado
+        stopTimer();
+        clearInterval(reminderInterval);
+        startTime = null;
+        localStorage.removeItem('jornadaStart');
+        $('description').value = '';
+        updateChar();
+        updateUI(false);
+
+        showToast(`✅ Jornada guardada — ${durStr} registradas`, 'success');
+        notify('Jornada finalizada', `Trabajaste ${durStr} hoy. ¡Bien hecho!`);
+
+        await loadHistorial();
+      } catch (e) {
+        showToast('Error al guardar: ' + e.message, 'error');
+      }
+    };
+
+    /* ═══════════════════════════════════════════════════════════════
+       CRONÓMETRO
+    ═══════════════════════════════════════════════════════════════ */
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(tickTimer, 1000);
+      tickTimer();
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      clockDisplay.textContent = '00:00:00';
+      clockDisplay.classList.add('inactive');
+    }
+
+    function tickTimer() {
+      if (!startTime) return;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      clockDisplay.textContent = formatHMS(elapsed);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HISTORIAL
+    ═══════════════════════════════════════════════════════════════ */
+    async function loadHistorial() {
+      if (!currentUser) return;
+      try {
+        const q = query(
+          collection(db, 'jornadas'),
+          where('uid', '==', currentUser.uid),
+          orderBy('startAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        const records = [];
+        snap.forEach(doc => records.push(doc.data()));
+        renderHistorial(records);
+        renderStats(records);
+      } catch (e) {
+        showToast('Error al cargar historial: ' + e.message, 'error');
+      }
+    }
+
+    function renderHistorial(records) {
+      const list = $('historialList');
+      $('histCount').textContent = records.length + ' registro' + (records.length !== 1 ? 's' : '');
+
+      if (!records.length) {
+        list.innerHTML = `<div class="history-empty">
+          <div class="icon">📋</div>
+          Aún no tienes jornadas registradas.<br>¡Inicia tu primera jornada!
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = records.map((r, i) => {
+        const start = r.startAt.toDate();
+        const end   = r.endAt.toDate();
+        return `
+        <div class="record" style="animation-delay:${i * 0.05}s">
+          <div class="record-top">
+            <div class="record-date">${fmtDate(start)}</div>
+            <div class="record-duration">${r.duration}</div>
+          </div>
+          <div class="record-times">
+            <span>▶ ${fmtTime(start)}</span>
+            <span>⏹ ${fmtTime(end)}</span>
+          </div>
+          <div class="record-desc">${escapeHtml(r.description)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderStats(records) {
+      if (!records.length) { statsCard.style.display = 'none'; return; }
+      statsCard.style.display = 'block';
+      const totalSec  = records.reduce((a, r) => a + (r.durationSec || 0), 0);
+      const totalH    = totalSec / 3600;
+      const avgH      = totalH / records.length;
+      $('statTotal').textContent = records.length;
+      $('statHours').textContent = totalH.toFixed(1) + 'h';
+      $('statAvg').textContent   = avgH.toFixed(1) + 'h';
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       NOTIFICACIONES
+    ═══════════════════════════════════════════════════════════════ */
+    window.requestNotifPerms = async () => {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        $('btnNotify').style.display = 'none';
+        showToast('🔔 Notificaciones activadas', 'success');
+      } else {
+        showToast('Permiso de notificaciones denegado', 'warn');
+      }
+    };
+
+    function notify(title, body) {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+      }
+    }
+
+    function startReminder() {
+      clearInterval(reminderInterval);
+      reminderInterval = setInterval(() => {
+        if (!startTime) return;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const hrs = Math.floor(elapsed / 3600);
+        const min = Math.floor((elapsed % 3600) / 60);
+        notify('⏰ Recordatorio de jornada', `Llevas ${hrs}h ${min}min trabajando. ¡Recuerda descansar!`);
+        showToast(`⏰ Llevas ${hrs}h ${min}min en jornada.`, 'info');
+      }, REMINDER_MS);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UI HELPERS
+    ═══════════════════════════════════════════════════════════════ */
+    function updateUI(isRunning) {
+      if (isRunning) {
+        clockCard.classList.add('active');
+        clockDisplay.classList.remove('inactive');
+        statusBadge.className = 'status-badge running';
+        statusText.textContent = 'En curso';
+        btnStart.disabled = true;
+        finishCard.style.display = 'block';
+        $('clockInfo').classList.add('visible');
+        $('startTimeLabel').textContent = fmtTime(startTime) + ' · ' + fmtDate(startTime);
+      } else {
+        clockCard.classList.remove('active');
+        clockDisplay.classList.add('inactive');
+        clockDisplay.textContent = '00:00:00';
+        statusBadge.className = 'status-badge stopped';
+        statusText.textContent = 'Sin iniciar';
+        btnStart.disabled = false;
+        finishCard.style.display = 'none';
+        $('clockInfo').classList.remove('visible');
+      }
+    }
+
+    window.updateChar = () => {
+      const len = $('description').value.length;
+      $('charCount').textContent = len + '/1000';
+    };
+
+    /* ═══════════════════════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════════════════════ */
+    function showToast(msg, type = 'info', duration = 4000) {
+      const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️' };
+      const container = $('toastContainer');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.innerHTML = `<span class="toast-icon">${icons[type]||'💬'}</span><span class="toast-msg">${msg}</span>`;
+      container.appendChild(t);
+      setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, duration);
+    }
+
+    window.showToast = showToast; // exponer globalmente por si acaso
+
+    /* ═══════════════════════════════════════════════════════════════
+       UTILIDADES DE FORMATO
+    ═══════════════════════════════════════════════════════════════ */
+    function pad(n)  { return String(n).padStart(2, '0'); }
+
+    function formatHMS(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      if (h > 0) return `${h}h ${pad(m)}m`;
+      return `${m}m`;
+    }
+
+    function fmtDate(d) {
+      return d.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    }
+
+    function fmtTime(d) {
+      return d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+  </script>
+</body>
+</html>
