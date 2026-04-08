@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Becario Track · Sistema de Jornadas</title>
+  <title>UniBecario · Sistema de Jornadas</title>
 
   <!-- ═══════════════════════════════════════════════════════════════
        FUENTES
@@ -180,6 +180,33 @@
     }
 
     .btn-google:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+    /* ── INPUTS DE FORMULARIO ── */
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 14px;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    input[type="email"]::placeholder,
+    input[type="password"]::placeholder {
+      color: var(--muted);
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: rgba(0,229,160,0.4);
+      box-shadow: 0 0 0 3px rgba(0,229,160,0.06);
+      background: rgba(255,255,255,0.08);
+    }
 
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #00b87a);
@@ -690,21 +717,63 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       PANTALLA DE LOGIN
+       PANTALLA DE LOGIN / REGISTRO
   ═══════════════════════════════════════════════════════════════ -->
   <div id="loginScreen" style="display:none">
     <div class="login-card">
-      <div class="login-logo">⬡ Becario Track</div>
+      <div class="login-logo">⬡ UniBecario</div>
       <h1 class="login-title">Registra tu<br><span>jornada</span></h1>
-      <p class="login-sub">Sistema de control de horas para becarios.<br>Inicia sesión con tu cuenta institucional.</p>
-      <button class="btn btn-google" onclick="loginGoogle()">
-        <!-- Ícono Google SVG inline -->
-        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        Continuar con Google
-      </button>
-      <p style="margin-top:20px;font-size:11px;color:var(--muted)">
+      <p class="login-sub">Sistema de control de horas para becarios.</p>
+
+      <!-- Pestañas -->
+      <div style="display:flex; gap:12px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:16px;">
+        <button class="btn btn-sm btn-ghost" id="tabLogin" onclick="switchTab('login')" style="flex:1; border-bottom:2px solid var(--accent); color:var(--accent); background:transparent;">
+          Iniciar Sesión
+        </button>
+        <button class="btn btn-sm btn-ghost" id="tabRegister" onclick="switchTab('register')" style="flex:1; border-bottom:2px solid transparent; color:var(--muted); background:transparent;">
+          Registrarse
+        </button>
+      </div>
+
+      <!-- FORMULARIO LOGIN -->
+      <div id="loginForm" style="display:block;">
+        <input type="email" id="loginEmail" placeholder="tu@email.com" style="width:100%; padding:12px; margin-bottom:12px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--body);" />
+        <input type="password" id="loginPassword" placeholder="Contraseña" style="width:100%; padding:12px; margin-bottom:20px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--body);" />
+        <button class="btn btn-primary" onclick="handleLogin()" style="width:100%;">
+          ▶ Iniciar Sesión
+        </button>
+      </div>
+
+      <!-- FORMULARIO REGISTRO -->
+      <div id="registerForm" style="display:none;">
+        <input type="email" id="registerEmail" placeholder="tu@email.com" style="width:100%; padding:12px; margin-bottom:12px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--body);" />
+        <input type="password" id="registerPassword" placeholder="Contraseña (min 6 caracteres)" style="width:100%; padding:12px; margin-bottom:12px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--body);" />
+        <input type="password" id="registerConfirm" placeholder="Confirmar contraseña" style="width:100%; padding:12px; margin-bottom:20px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--body);" />
+        <button class="btn btn-primary" onclick="handleRegister()" style="width:100%;">
+          ✓ Crear Cuenta
+        </button>
+      </div>
+
+      <p style="margin-top:20px;font-size:11px;color:var(--muted); text-align:center;">
         Tus datos se guardan de forma segura en Firebase
       </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MODAL FINALIZAR JORNADA
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="finishModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:300; align-items:center; justify-content:center;">
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:24px; padding:40px; max-width:420px; width:90%; text-align:center; animation:fadeUp 0.3s ease;">
+      <h2 style="font-family:var(--sans); font-size:24px; font-weight:700; margin-bottom:12px; color:var(--text);">Finalizar jornada</h2>
+      <p style="color:var(--muted); margin-bottom:24px;">Describe lo que realizaste hoy</p>
+      
+      <textarea id="modalDescription" placeholder="Tus actividades, aprendizajes, tareas completadas..." style="width:100%; padding:12px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:var(--body); font-size:14px; line-height:1.6; min-height:100px; margin-bottom:20px; resize:vertical; outline:none;" maxlength="1000"></textarea>
+      
+      <div style="display:flex; gap:12px;">
+        <button class="btn btn-ghost" onclick="document.getElementById('finishModal').style.display='none';" style="flex:1;">Cancelar</button>
+        <button class="btn btn-danger" onclick="submitFromModal()" style="flex:1;">✓ Guardar jornada</button>
+      </div>
     </div>
   </div>
 
@@ -717,7 +786,7 @@
     <header class="topbar">
       <div class="topbar-brand">
         <span class="dot"></span>
-        Becario Track
+        UniBecario
       </div>
       <div class="topbar-right">
         <div class="user-pill">
@@ -802,6 +871,57 @@
         </div>
       </div>
 
+      <!-- ── CONFIGURAR RECORDATORIOS ── -->
+      <div class="card" id="remindersCard">
+        <div class="card-header">
+          <span class="card-title">Recordatorios automáticos</span>
+        </div>
+
+        <div style="display:grid; gap:20px;">
+          <!-- Recordatorio de Inicio -->
+          <div style="padding:16px; background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <span style="font-size:18px;">▶</span>
+              <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de inicio</span>
+            </div>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Recibe una notificación a esta hora cada día</p>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="time" id="reminderStartTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
+              <button class="btn btn-sm" id="btnSaveStartReminder" onclick="saveReminder('start')" style="background:rgba(0,229,160,0.2); color:var(--accent); border:1px solid rgba(0,229,160,0.3); min-width:100px;">
+                ✓ Guardar
+              </button>
+              <button class="btn btn-sm btn-ghost" id="btnCancelStartReminder" onclick="cancelReminder('start')" style="min-width:80px; display:none;">
+                ✕ Cancelar
+              </button>
+            </div>
+            <div style="margin-top:8px; font-size:11px; color:var(--muted);">
+              Estado: <span id="reminderStartStatus">no configurado</span>
+            </div>
+          </div>
+
+          <!-- Recordatorio de Finalización -->
+          <div style="padding:16px; background:rgba(255,75,110,0.08); border:1px solid rgba(255,75,110,0.2); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <span style="font-size:18px;">⏹</span>
+              <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de finalización</span>
+            </div>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Recibe un recordatorio para finalizar a esta hora</p>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="time" id="reminderEndTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
+              <button class="btn btn-sm" id="btnSaveEndReminder" onclick="saveReminder('end')" style="background:rgba(255,75,110,0.2); color:var(--danger); border:1px solid rgba(255,75,110,0.3); min-width:100px;">
+                ✓ Guardar
+              </button>
+              <button class="btn btn-sm btn-ghost" id="btnCancelEndReminder" onclick="cancelReminder('end')" style="min-width:80px; display:none;">
+                ✕ Cancelar
+              </button>
+            </div>
+            <div style="margin-top:8px; font-size:11px; color:var(--muted);">
+              Estado: <span id="reminderEndStatus">no configurado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── HISTORIAL ── -->
       <div class="card">
         <div class="card-header">
@@ -829,9 +949,9 @@
   ═══════════════════════════════════════════════════════════════ -->
   <script type="module">
     import { initializeApp }            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut }
                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, Timestamp, doc, deleteDoc }
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, Timestamp, doc, deleteDoc, setDoc, getDoc }
                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     /* ─────────────────────────────────────────────────────────────
@@ -861,9 +981,8 @@
     const fbApp  = initializeApp(firebaseConfig);
     const auth   = getAuth(fbApp);
     const db     = getFirestore(fbApp);
-    const provider = new GoogleAuthProvider();
 
-    // ── Estado global ──
+    // ── Estado Persistencia ──
     let currentUser  = null;
     let timerInterval = null;
     let reminderInterval = null;
@@ -883,23 +1002,129 @@
     const statusText   = $('statusText');
     const btnStart     = $('btnStart');
 
+    // ── Agregar event listeners a inputs de formulario ──
+    setTimeout(() => {
+      const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
+      inputs.forEach(input => {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            const loginForm = $('loginForm');
+            const registerForm = $('registerForm');
+            if (loginForm && loginForm.style.display !== 'none') {
+              handleLogin();
+            } else if (registerForm && registerForm.style.display !== 'none') {
+              handleRegister();
+            }
+          }
+        });
+      });
+    }, 100);
+
+    // ── Registrar Service Worker al inicio ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW no registrado:', e));
+    }
+
     /* ═══════════════════════════════════════════════════════════════
        AUTENTICACIÓN
     ═══════════════════════════════════════════════════════════════ */
-    // Exponer al HTML global scope
-    window.loginGoogle = async () => {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (e) {
-        showToast('No se pudo iniciar sesión: ' + e.message, 'error');
+    // Cambiar entre pestañas
+    window.switchTab = (tab) => {
+      const tabLogin = $('tabLogin');
+      const tabRegister = $('tabRegister');
+      const loginForm = $('loginForm');
+      const registerForm = $('registerForm');
+
+      if (tab === 'login') {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        tabLogin.style.borderBottomColor = 'var(--accent)';
+        tabLogin.style.color = 'var(--accent)';
+        tabRegister.style.borderBottomColor = 'transparent';
+        tabRegister.style.color = 'var(--muted)';
+      } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        tabLogin.style.borderBottomColor = 'transparent';
+        tabLogin.style.color = 'var(--muted)';
+        tabRegister.style.borderBottomColor = 'var(--accent)';
+        tabRegister.style.color = 'var(--accent)';
       }
     };
+
+    // Iniciar sesión con email/contraseña
+    window.handleLogin = async () => {
+      const email = $('loginEmail').value.trim();
+      const password = $('loginPassword').value;
+
+      if (!email || !password) {
+        showToast('Por favor ingresa email y contraseña', 'error');
+        return;
+      }
+
+      try {
+        showToast('Iniciando sesión...', 'info');
+        await signInWithEmailAndPassword(auth, email, password);
+        $('loginEmail').value = '';
+        $('loginPassword').value = '';
+      } catch (e) {
+        showToast('Error: ' + getErrorMessage(e.code), 'error');
+      }
+    };
+
+    // Registrar nuevo usuario
+    window.handleRegister = async () => {
+      const email = $('registerEmail').value.trim();
+      const password = $('registerPassword').value;
+      const confirm = $('registerConfirm').value;
+
+      if (!email || !password || !confirm) {
+        showToast('Por favor completa todos los campos', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+        return;
+      }
+
+      if (password !== confirm) {
+        showToast('Las contraseñas no coinciden', 'error');
+        return;
+      }
+
+      try {
+        showToast('Creando cuenta...', 'info');
+        await createUserWithEmailAndPassword(auth, email, password);
+        // El usuario se iniciará automáticamente gracias a onAuthStateChanged
+        $('registerEmail').value = '';
+        $('registerPassword').value = '';
+        $('registerConfirm').value = '';
+      } catch (e) {
+        showToast('Error: ' + getErrorMessage(e.code), 'error');
+      }
+    };
+
+    // Convertir códigos de error de Firebase a mensajes legibles
+    function getErrorMessage(code) {
+      const messages = {
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-disabled': 'Usuario deshabilitado',
+        'auth/user-not-found': 'Usuario no encontrado',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/email-already-in-use': 'Este email ya está registrado',
+        'auth/operation-not-allowed': 'Operación no permitida',
+        'auth/weak-password': 'Contraseña muy débil',
+      };
+      return messages[code] || e.message;
+    }
 
     window.logout = async () => {
       stopTimer();
       clearInterval(reminderInterval);
+      if (reminderCheckInterval) clearInterval(reminderCheckInterval);
       await signOut(auth);
-      localStorage.removeItem('jornadaStart');
+      // NO limpiar jornadaStart - la jornada continúa en segundo plano
     };
 
     // Escuchar cambios de auth
@@ -910,12 +1135,16 @@
         loginScreen.style.display = 'none';
         appEl.style.display = 'block';
         // Avatar + email
-        $('userAvatar').textContent = user.displayName ? user.displayName[0].toUpperCase() : '?';
+        const firstLetter = user.email ? user.email[0].toUpperCase() : '?';
+        $('userAvatar').textContent = firstLetter;
         $('userEmail').textContent  = user.email;
         // Restaurar jornada activa desde localStorage
         restoreJornada();
         // Cargar historial
         await loadHistorial();
+        // Cargar recordatorios configurados
+        await loadReminders();
+        startReminderScheduler();
         // Pedir permiso notificaciones
         if (Notification.permission === 'default') {
           $('btnNotify').style.display = 'inline-flex';
@@ -930,7 +1159,7 @@
     /* ═══════════════════════════════════════════════════════════════
        JORNADA — INICIO
     ═══════════════════════════════════════════════════════════════ */
-    window.startJornada = () => {
+    window.startJornada = async () => {
       if (startTime) return; // ya está corriendo
 
       startTime = new Date();
@@ -941,6 +1170,34 @@
       startReminder();
 
       showToast('🟢 Jornada iniciada. ¡Mucho éxito!', 'success');
+      
+      // Registrar Service Worker para notificaciones persistentes
+      if ('serviceWorker' in navigator) {
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+          // Mostrar notificación persistente con acción para finalizar
+          if (Notification.permission === 'granted') {
+            const registration = await navigator.serviceWorker.ready;
+            registration.showNotification('🟢 Jornada iniciada', {
+              body: 'Tu jornada está en progreso. Toca aquí para finalizar.',
+              icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
+              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
+              tag: 'unibecario-jornada', // Usar tag para que solo haya una notificación
+              requireInteraction: true, // Notificación persistente
+              actions: [
+                {
+                  action: 'finish',
+                  title: '✓ Finalizar jornada',
+                  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polyline points="10,50 40,80 90,20" stroke="%2300e5a0" stroke-width="8" fill="none" stroke-linecap="round"/></svg>'
+                }
+              ]
+            });
+          }
+        } catch (e) {
+          console.log('Error registrando Service Worker:', e);
+        }
+      }
+
       notify('Jornada iniciada', 'El cronómetro está corriendo ⏱');
     };
 
@@ -951,6 +1208,25 @@
         updateUI(true);
         startTimer();
         startReminder();
+        
+        // Restaurar notificación persistente si hay jornada en progreso
+        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('🟢 Jornada en progreso', {
+              body: 'Tu jornada continúa. Toca aquí para finalizar.',
+              icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
+              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
+              tag: 'unibecario-jornada',
+              requireInteraction: true,
+              actions: [
+                {
+                  action: 'finish',
+                  title: '✓ Finalizar jornada'
+                }
+              ]
+            });
+          });
+        }
       }
     }
 
@@ -980,6 +1256,19 @@
       $('description').value = '';
       updateChar();
       updateUI(false);
+
+      // Cerrar notificación persistente
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.getNotifications().then(notifications => {
+            notifications.forEach(notification => {
+              if (notification.tag === 'unibecario-jornada') {
+                notification.close();
+              }
+            });
+          });
+        });
+      }
 
       showToast('⏳ Guardando jornada...', 'info');
 
@@ -1055,6 +1344,27 @@
       clockDisplay.textContent = formatHMS(elapsed);
     }
 
+    // ── Escuchar mensajes del Service Worker ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data.type === 'FINISH_FROM_NOTIFICATION') {
+          // Mostrar modal o formulario para finalizar
+          if (currentUser && startTime) {
+            const modal = $('finishModal');
+            modal.style.display = 'flex';
+          } else if (!currentUser) {
+            showToast('Por favor inicia sesión primero', 'info');
+          }
+        } else if (event.data.type === 'START_JORNADA_FROM_REMINDER') {
+          // Iniciar jornada desde recordatorio
+          if (currentUser && !startTime) {
+            startJornada();
+            showToast('🟢 Jornada iniciada desde recordatorio', 'success');
+          }
+        }
+      });
+    }
+
     /* ═══════════════════════════════════════════════════════════════
        HISTORIAL
     ═══════════════════════════════════════════════════════════════ */
@@ -1063,12 +1373,13 @@
       try {
         const q = query(
           collection(db, 'jornadas'),
-          where('uid', '==', currentUser.uid),
-          orderBy('startAt', 'desc')
+          where('uid', '==', currentUser.uid)
         );
         const snap = await getDocs(q);
         const records = [];
         snap.forEach(docSnap => records.push({ ...docSnap.data(), docId: docSnap.id }));
+        // Ordenar por startAt descendente (más reciente primero)
+        records.sort((a, b) => b.startAt.toDate() - a.startAt.toDate());
         renderHistorial(records);
         renderStats(records);
       } catch (e) {
@@ -1125,6 +1436,142 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════
+       RECORDATORIOS AUTOMÁTICOS
+    ═══════════════════════════════════════════════════════════════ */
+    async function loadReminders() {
+      if (!currentUser) return;
+      try {
+        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.reminderStartTime) {
+            $('reminderStartTime').value = data.reminderStartTime;
+            $('reminderStartStatus').textContent = `📍 ${data.reminderStartTime}`;
+          }
+          if (data.reminderEndTime) {
+            $('reminderEndTime').value = data.reminderEndTime;
+            $('reminderEndStatus').textContent = `📍 ${data.reminderEndTime}`;
+          }
+        }
+      } catch (e) {
+        console.log('Error cargando recordatorios:', e);
+      }
+    }
+
+    window.saveReminder = async (type) => {
+      if (!currentUser) return;
+
+      const timeInput = type === 'start' ? $('reminderStartTime') : $('reminderEndTime');
+      const time = timeInput.value;
+
+      if (!time) {
+        showToast('Por favor selecciona una hora', 'warn');
+        return;
+      }
+
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const updates = type === 'start'
+          ? { reminderStartTime: time }
+          : { reminderEndTime: time };
+
+        await setDoc(userDocRef, updates, { merge: true });
+        
+        const statusEl = type === 'start' ? $('reminderStartStatus') : $('reminderEndStatus');
+        statusEl.textContent = `📍 ${time}`;
+        
+        showToast(`✅ Recordatorio guardado para las ${time}`, 'success');
+        
+        // Iniciar sistema de recordatorios
+        startReminderScheduler();
+      } catch (e) {
+        showToast('Error al guardar recordatorio: ' + e.message, 'error');
+      }
+    };
+
+    window.cancelReminder = async (type) => {
+      if (!currentUser) return;
+
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const updates = type === 'start'
+          ? { reminderStartTime: '' }
+          : { reminderEndTime: '' };
+
+        await setDoc(userDocRef, updates, { merge: true });
+        
+        const timeInput = type === 'start' ? $('reminderStartTime') : $('reminderEndTime');
+        const statusEl = type === 'start' ? $('reminderStartStatus') : $('reminderEndStatus');
+        
+        timeInput.value = '';
+        statusEl.textContent = 'no configurado';
+        
+        showToast('✅ Recordatorio cancelado', 'success');
+      } catch (e) {
+        showToast('Error al cancelar: ' + e.message, 'error');
+      }
+    };
+
+    // ── Verificar y enviar recordatorios ──
+    let reminderCheckInterval = null;
+
+    function startReminderScheduler() {
+      if (reminderCheckInterval) clearInterval(reminderCheckInterval);
+      
+      // Verificar cada minuto si es hora de enviar recordatorio
+      reminderCheckInterval = setInterval(checkReminders, 60000);
+      checkReminders(); // Verificar inmediatamente
+    }
+
+    function checkReminders() {
+      if (!currentUser) return;
+      
+      try {
+        const now = new Date();
+        const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        
+        const startTime = $('reminderStartTime').value;
+        const endTime = $('reminderEndTime').value;
+        
+        // Recordatorio de inicio
+        if (startTime && currentTime === startTime && !startTime.sent) {
+          sendScheduledNotification('🟢 Hora de iniciar jornada', 'Es hora de registrar tu jornada. ¡Toca aquí para comenzar!', 'start');
+          $('reminderStartTime').setAttribute('data-sent', 'true');
+          setTimeout(() => $('reminderStartTime').removeAttribute('data-sent'), 60000); // Reset después de 1 minuto
+        }
+        
+        // Recordatorio de finalización
+        if (endTime && currentTime === endTime && !endTime.sent) {
+          sendScheduledNotification('⏹ Hora de finalizar jornada', 'Es hora de finalizar y guardar tu jornada. ¡Toca aquí!', 'end');
+          $('reminderEndTime').setAttribute('data-sent', 'true');
+          setTimeout(() => $('reminderEndTime').removeAttribute('data-sent'), 60000);
+        }
+      } catch (e) {
+        console.log('Error verificando recordatorios:', e);
+      }
+    }
+
+    function sendScheduledNotification(title, body, type) {
+      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(title, {
+            body: body,
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
+            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
+            tag: `unibecario-reminder-${type}`,
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'open',
+                title: type === 'start' ? '▶ Iniciar' : '⏹ Finalizar'
+              }
+            ]
+          });
+        });
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
        NOTIFICACIONES
     ═══════════════════════════════════════════════════════════════ */
     window.requestNotifPerms = async () => {
@@ -1154,6 +1601,23 @@
         showToast(`⏰ Llevas ${hrs}h ${min}min en jornada.`, 'info');
       }, REMINDER_MS);
     }
+
+    // ── Finalizar desde Modal ──
+    window.submitFromModal = async () => {
+      const desc = $('modalDescription').value.trim();
+      if (!desc) {
+        showToast('Por favor escribe una descripción', 'error');
+        return;
+      }
+      
+      // Copiar a textarea principal y llamar a finishJornada
+      $('description').value = desc;
+      $('finishModal').style.display = 'none';
+      $('modalDescription').value = '';
+      
+      // Llamar a finishJornada que se encargará del resto
+      await finishJornada();
+    };
 
     /* ═══════════════════════════════════════════════════════════════
        UI HELPERS
