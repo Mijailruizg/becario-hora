@@ -1171,6 +1171,9 @@
 
       showToast('🟢 Jornada iniciada. ¡Mucho éxito!', 'success');
       
+      // Vibrar para confirmar
+      vibrateMedium();
+      
       // Registrar Service Worker para notificaciones persistentes
       if ('serviceWorker' in navigator) {
         try {
@@ -1286,6 +1289,9 @@
 
         showToast(`✅ Jornada guardada — ${durStr} registradas`, 'success');
         notify('Jornada finalizada', `Trabajaste ${durStr} hoy. ¡Bien hecho!`);
+        
+        // Vibrar para confirmar que se guardó
+        vibrateShort();
 
         // Recargar historial después de 1 segundo
         setTimeout(() => loadHistorial(), 1000);
@@ -1439,18 +1445,18 @@
        RECORDATORIOS AUTOMÁTICOS
     ═══════════════════════════════════════════════════════════════ */
     async function loadReminders() {
-      if (!currentUser) return;
+      // Cargar recordatorios desde localStorage
       try {
-        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.reminderStartTime) {
-            $('reminderStartTime').value = data.reminderStartTime;
-            $('reminderStartStatus').textContent = `📍 ${data.reminderStartTime}`;
+        const savedReminders = localStorage.getItem('unibecario_reminders');
+        if (savedReminders) {
+          const reminders = JSON.parse(savedReminders);
+          if (reminders.startTime) {
+            $('reminderStartTime').value = reminders.startTime;
+            $('reminderStartStatus').textContent = `📍 ${reminders.startTime}`;
           }
-          if (data.reminderEndTime) {
-            $('reminderEndTime').value = data.reminderEndTime;
-            $('reminderEndStatus').textContent = `📍 ${data.reminderEndTime}`;
+          if (reminders.endTime) {
+            $('reminderEndTime').value = reminders.endTime;
+            $('reminderEndStatus').textContent = `📍 ${reminders.endTime}`;
           }
         }
       } catch (e) {
@@ -1459,8 +1465,6 @@
     }
 
     window.saveReminder = async (type) => {
-      if (!currentUser) return;
-
       const timeInput = type === 'start' ? $('reminderStartTime') : $('reminderEndTime');
       const time = timeInput.value;
 
@@ -1470,15 +1474,22 @@
       }
 
       try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const updates = type === 'start'
-          ? { reminderStartTime: time }
-          : { reminderEndTime: time };
-
-        await setDoc(userDocRef, updates, { merge: true });
+        // Guardar en localStorage
+        const reminders = JSON.parse(localStorage.getItem('unibecario_reminders') || '{}');
+        if (type === 'start') {
+          reminders.startTime = time;
+        } else {
+          reminders.endTime = time;
+        }
+        localStorage.setItem('unibecario_reminders', JSON.stringify(reminders));
         
         const statusEl = type === 'start' ? $('reminderStartStatus') : $('reminderEndStatus');
         statusEl.textContent = `📍 ${time}`;
+        
+        // Vibrar para confirmar
+        if (navigator.vibrate) {
+          navigator.vibrate([50, 30, 50]);
+        }
         
         showToast(`✅ Recordatorio guardado para las ${time}`, 'success');
         
@@ -1490,15 +1501,15 @@
     };
 
     window.cancelReminder = async (type) => {
-      if (!currentUser) return;
-
       try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const updates = type === 'start'
-          ? { reminderStartTime: '' }
-          : { reminderEndTime: '' };
-
-        await setDoc(userDocRef, updates, { merge: true });
+        // Guardar en localStorage
+        const reminders = JSON.parse(localStorage.getItem('unibecario_reminders') || '{}');
+        if (type === 'start') {
+          reminders.startTime = '';
+        } else {
+          reminders.endTime = '';
+        }
+        localStorage.setItem('unibecario_reminders', JSON.stringify(reminders));
         
         const timeInput = type === 'start' ? $('reminderStartTime') : $('reminderEndTime');
         const statusEl = type === 'start' ? $('reminderStartStatus') : $('reminderEndStatus');
@@ -1553,13 +1564,10 @@
 
     function sendScheduledNotification(title, body, type) {
       if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        // Ejecutar alarma completa (vibración + sonido)
+        executeFullAlarm(type);
+        
         navigator.serviceWorker.ready.then(registration => {
-          // Vibrar fuerte como alarma
-          vibrateAlarm();
-          
-          // Reproducir sonido de alarma
-          playAlarmSound(type);
-          
           registration.showNotification(title, {
             body: body,
             icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
@@ -1580,13 +1588,41 @@
 
     // ── Vibración de alarma ──
     function vibrateAlarm() {
+      if (!navigator.vibrate) {
+        console.log('Vibración no soportada en este dispositivo');
+        return;
+      }
+      // Patrón de vibración fuerte para alarma: vibración potente y repetida
+      // Patrón: vibra 200ms, pausa 100ms, vibra 200ms, pausa 100ms (repetido)
+      try {
+        navigator.vibrate([
+          200, 150, 200, 150, 200, 150,
+          200, 150, 200, 150, 200, 150,
+          200, 150, 200, 150
+        ]);
+      } catch (e) {
+        console.log('Error en vibración:', e);
+      }
+    }
+
+    // ── Vibración corta para confirmación ──
+    function vibrateShort() {
       if (!navigator.vibrate) return;
-      // Patrón de vibración para alarma: vibración fuerte y repetida
-      // [vibra, pausa, vibra, pausa, ...] en milisegundos
-      navigator.vibrate([
-        150, 100, 150, 100, 150, 100,
-        150, 100, 150, 100, 150, 100
-      ]);
+      try {
+        navigator.vibrate([50, 30, 50, 30, 50]);
+      } catch (e) {
+        console.log('Error en vibración corta:', e);
+      }
+    }
+
+    // ── Vibración media ──
+    function vibrateMedium() {
+      if (!navigator.vibrate) return;
+      try {
+        navigator.vibrate([100, 50, 100, 50, 100]);
+      } catch (e) {
+        console.log('Error en vibración media:', e);
+      }
     }
 
     // ── Sonido de alarma usando Web Audio API ──
@@ -1637,6 +1673,33 @@
       } catch (e) {
         console.log('Error al generar tono:', e);
       }
+    }
+
+    // ── Ejecutar alarma completa (vibración + sonido + notificación) ──
+    function executeFullAlarm(type) {
+      // Vibrar múltiples veces para asegurar que se sienta
+      vibrateAlarm();
+      
+      // Repetir vibración después de 500ms
+      setTimeout(() => {
+        if (navigator.vibrate) {
+          try {
+            navigator.vibrate([200, 150, 200, 150, 200]);
+          } catch (e) {}
+        }
+      }, 500);
+      
+      // Repetir vibración después de 1200ms
+      setTimeout(() => {
+        if (navigator.vibrate) {
+          try {
+            navigator.vibrate([200, 150, 200, 150, 200]);
+          } catch (e) {}
+        }
+      }, 1200);
+      
+      // Reproducir sonido
+      playAlarmSound(type);
     }
 
     /* ═══════════════════════════════════════════════════════════════
