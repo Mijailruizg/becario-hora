@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#00e5a0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UniBecario">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%2300e5a0' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%230a0c10'/><text x='96' y='110' text-anchor='middle' font-size='80' font-weight='bold' fill='%2300e5a0' font-family='system-ui'>UB</text></svg>">
   <title>UniBecario · Sistema de Jornadas</title>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -884,7 +891,7 @@
               <span style="font-size:18px;">▶</span>
               <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de inicio</span>
             </div>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">🔊 Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;"> Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
             <div style="display:flex; gap:8px; align-items:center;">
               <input type="time" id="reminderStartTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
               <button class="btn btn-sm" id="btnSaveStartReminder" onclick="saveReminder('start')" style="background:rgba(0,229,160,0.2); color:var(--accent); border:1px solid rgba(0,229,160,0.3); min-width:100px;">
@@ -905,7 +912,7 @@
               <span style="font-size:18px;">⏹</span>
               <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de finalización</span>
             </div>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">🔊 Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
             <div style="display:flex; gap:8px; align-items:center;">
               <input type="time" id="reminderEndTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
               <button class="btn btn-sm" id="btnSaveEndReminder" onclick="saveReminder('end')" style="background:rgba(255,75,110,0.2); color:var(--danger); border:1px solid rgba(255,75,110,0.3); min-width:100px;">
@@ -930,7 +937,7 @@
         </div>
         <div id="historialList">
           <div class="history-empty">
-            <div class="icon">📋</div>
+            <div class="icon"></div>
             Aún no tienes jornadas registradas.<br>¡Inicia tu primera jornada!
           </div>
         </div>
@@ -1174,35 +1181,46 @@
       // Vibrar para confirmar
       vibrateMedium();
       
-      // Registrar Service Worker para notificaciones persistentes
-      if ('serviceWorker' in navigator) {
-        try {
-          await navigator.serviceWorker.register('/sw.js');
-          // Mostrar notificación persistente con acción para finalizar
-          if (Notification.permission === 'granted') {
-            const registration = await navigator.serviceWorker.ready;
-            registration.showNotification('🟢 Jornada iniciada', {
-              body: 'Tu jornada está en progreso. Toca aquí para finalizar.',
-              icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
-              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
-              tag: 'unibecario-jornada', // Usar tag para que solo haya una notificación
-              requireInteraction: true, // Notificación persistente
-              actions: [
-                {
-                  action: 'finish',
-                  title: '✓ Finalizar jornada',
-                  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polyline points="10,50 40,80 90,20" stroke="%2300e5a0" stroke-width="8" fill="none" stroke-linecap="round"/></svg>'
-                }
-              ]
-            });
-          }
-        } catch (e) {
-          console.log('Error registrando Service Worker:', e);
-        }
-      }
-
+      // Mostrar y actualizar notificación de jornada
+      showPersistentJornada();
+      
+      // Actualizar notificación cada 30 segundos
+      jornadaNotificationInterval = setInterval(showPersistentJornada, 30000);
+      
       notify('Jornada iniciada', 'El cronómetro está corriendo ⏱');
     };
+
+    // ── Variable global para intervalo de notificación ──
+    let jornadaNotificationInterval = null;
+
+    // ── Mostrar notificación persistente de jornada ──
+    async function showPersistentJornada() {
+      if (!startTime || Notification.permission !== 'granted') return;
+      
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const timeStr = formatHMS(elapsed);
+      
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          registration.showNotification('⏱️ Jornada en progreso: ' + timeStr, {
+            body: 'Toca para finalizar tu jornada',
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
+            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
+            tag: 'unibecario-jornada',
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'finish',
+                title: '✓ Finalizar ahora'
+              }
+            ]
+          });
+        } catch (e) {
+          console.log('Error mostrando notificación:', e);
+        }
+      }
+    }
 
     function restoreJornada() {
       const saved = localStorage.getItem('jornadaStart');
@@ -1214,21 +1232,9 @@
         
         // Restaurar notificación persistente si hay jornada en progreso
         if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification('🟢 Jornada en progreso', {
-              body: 'Tu jornada continúa. Toca aquí para finalizar.',
-              icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
-              badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
-              tag: 'unibecario-jornada',
-              requireInteraction: true,
-              actions: [
-                {
-                  action: 'finish',
-                  title: '✓ Finalizar jornada'
-                }
-              ]
-            });
-          });
+          showPersistentJornada();
+          // Actualizar notificación cada 30 segundos
+          jornadaNotificationInterval = setInterval(showPersistentJornada, 30000);
         }
       }
     }
@@ -1244,6 +1250,12 @@
         return;
       }
       if (!startTime) return;
+
+      // ⏸️ Detener intervalo de notificación
+      if (jornadaNotificationInterval) {
+        clearInterval(jornadaNotificationInterval);
+        jornadaNotificationInterval = null;
+      }
 
       // ⏸️ Detener inmediatamente la jornada en la UI
       const endTime = new Date();
@@ -1588,17 +1600,17 @@
 
     // ── Vibración de alarma ──
     function vibrateAlarm() {
-      if (!navigator.vibrate) {
-        console.log('Vibración no soportada en este dispositivo');
+      if (!navigator.vibrate && !navigator.webkitVibrate) {
+        console.log('Vibración no soportada');
         return;
       }
-      // Patrón de vibración fuerte para alarma: vibración potente y repetida
-      // Patrón: vibra 200ms, pausa 100ms, vibra 200ms, pausa 100ms (repetido)
+      const vibrator = navigator.vibrate || navigator.webkitVibrate;
       try {
-        navigator.vibrate([
-          200, 150, 200, 150, 200, 150,
-          200, 150, 200, 150, 200, 150,
-          200, 150, 200, 150
+        // Patrón super potente: vibración prolongada
+        vibrator.call(navigator, [
+          250, 150, 250, 150, 250, 150,
+          250, 150, 250, 150, 250, 150,
+          250, 150, 250, 150
         ]);
       } catch (e) {
         console.log('Error en vibración:', e);
@@ -1607,9 +1619,10 @@
 
     // ── Vibración corta para confirmación ──
     function vibrateShort() {
-      if (!navigator.vibrate) return;
+      if (!navigator.vibrate && !navigator.webkitVibrate) return;
+      const vibrator = navigator.vibrate || navigator.webkitVibrate;
       try {
-        navigator.vibrate([50, 30, 50, 30, 50]);
+        vibrator.call(navigator, [75, 40, 75, 40, 75]);
       } catch (e) {
         console.log('Error en vibración corta:', e);
       }
@@ -1617,11 +1630,27 @@
 
     // ── Vibración media ──
     function vibrateMedium() {
-      if (!navigator.vibrate) return;
+      if (!navigator.vibrate && !navigator.webkitVibrate) return;
+      const vibrator = navigator.vibrate || navigator.webkitVibrate;
       try {
-        navigator.vibrate([100, 50, 100, 50, 100]);
+        vibrator.call(navigator, [150, 80, 150, 80, 150]);
       } catch (e) {
         console.log('Error en vibración media:', e);
+      }
+    }
+
+    // ── Vibración muy potente (para recordatorios) ──
+    function vibrateStrong() {
+      if (!navigator.vibrate && !navigator.webkitVibrate) return;
+      const vibrator = navigator.vibrate || navigator.webkitVibrate;
+      try {
+        // Vibración ultra potente: 300ms vibración
+        vibrator.call(navigator, [
+          300, 200, 300, 200, 300, 200,
+          300, 200, 300, 200, 300, 200
+        ]);
+      } catch (e) {
+        console.log('Error en vibración fuerte:', e);
       }
     }
 
@@ -1677,26 +1706,18 @@
 
     // ── Ejecutar alarma completa (vibración + sonido + notificación) ──
     function executeFullAlarm(type) {
-      // Vibrar múltiples veces para asegurar que se sienta
-      vibrateAlarm();
+      // Vibración ultra potente
+      vibrateStrong();
       
-      // Repetir vibración después de 500ms
+      // Repetir vibración después de 800ms
       setTimeout(() => {
-        if (navigator.vibrate) {
-          try {
-            navigator.vibrate([200, 150, 200, 150, 200]);
-          } catch (e) {}
-        }
-      }, 500);
+        vibrateStrong();
+      }, 800);
       
-      // Repetir vibración después de 1200ms
+      // Repetir vibración después de 1600ms
       setTimeout(() => {
-        if (navigator.vibrate) {
-          try {
-            navigator.vibrate([200, 150, 200, 150, 200]);
-          } catch (e) {}
-        }
-      }, 1200);
+        vibrateStrong();
+      }, 1600);
       
       // Reproducir sonido
       playAlarmSound(type);
