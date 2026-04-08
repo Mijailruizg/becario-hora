@@ -821,8 +821,8 @@
           <button class="btn btn-primary" id="btnStart" onclick="startJornada()">
             ▷&nbsp; Iniciar jornada
           </button>
-          <button class="btn btn-ghost" id="btnNotify" onclick="requestNotifPerms()" style="display:none">
-            🔔&nbsp; Activar notificaciones
+          <button class="btn btn-ghost" id="btnNotify" onclick="requestNotifPerms()" style="display:none" title="Permitir notificaciones y alarmas">
+            🔔&nbsp; Activar alarmas
           </button>
         </div>
       </div>
@@ -884,7 +884,7 @@
               <span style="font-size:18px;">▶</span>
               <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de inicio</span>
             </div>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Recibe una notificación a esta hora cada día</p>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">🔊 Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
             <div style="display:flex; gap:8px; align-items:center;">
               <input type="time" id="reminderStartTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
               <button class="btn btn-sm" id="btnSaveStartReminder" onclick="saveReminder('start')" style="background:rgba(0,229,160,0.2); color:var(--accent); border:1px solid rgba(0,229,160,0.3); min-width:100px;">
@@ -905,7 +905,7 @@
               <span style="font-size:18px;">⏹</span>
               <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de finalización</span>
             </div>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Recibe un recordatorio para finalizar a esta hora</p>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">🔊 Alarma con sonido, vibración y notificación a esta hora<br><strong>Nota:</strong> Activa las "Alarmas" en el botón 🔔 de arriba</p>
             <div style="display:flex; gap:8px; align-items:center;">
               <input type="time" id="reminderEndTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
               <button class="btn btn-sm" id="btnSaveEndReminder" onclick="saveReminder('end')" style="background:rgba(255,75,110,0.2); color:var(--danger); border:1px solid rgba(255,75,110,0.3); min-width:100px;">
@@ -1554,12 +1554,19 @@
     function sendScheduledNotification(title, body, type) {
       if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         navigator.serviceWorker.ready.then(registration => {
+          // Vibrar fuerte como alarma
+          vibrateAlarm();
+          
+          // Reproducir sonido de alarma
+          playAlarmSound(type);
+          
           registration.showNotification(title, {
             body: body,
             icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2300e5a0"/><circle cx="50" cy="50" r="35" fill="%230a0c10"/><circle cx="50" cy="50" r="30" fill="%2300e5a0"/></svg>',
             badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300e5a0"/></svg>',
             tag: `unibecario-reminder-${type}`,
             requireInteraction: true,
+            silent: true, // Dejar que el sonido lo manejo yo
             actions: [
               {
                 action: 'open',
@@ -1571,16 +1578,110 @@
       }
     }
 
+    // ── Vibración de alarma ──
+    function vibrateAlarm() {
+      if (!navigator.vibrate) return;
+      // Patrón de vibración para alarma: vibración fuerte y repetida
+      // [vibra, pausa, vibra, pausa, ...] en milisegundos
+      navigator.vibrate([
+        150, 100, 150, 100, 150, 100,
+        150, 100, 150, 100, 150, 100
+      ]);
+    }
+
+    // ── Sonido de alarma usando Web Audio API ──
+    function playAlarmSound(type) {
+      try {
+        // Crear contexto de audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        if (type === 'start') {
+          // Sonido para inicio: tono ascendente
+          playTone(audioContext, 800, 0.2);
+          setTimeout(() => playTone(audioContext, 1000, 0.2), 200);
+          setTimeout(() => playTone(audioContext, 1200, 0.2), 400);
+        } else if (type === 'end') {
+          // Sonido para finalización: tono descendente
+          playTone(audioContext, 1200, 0.2);
+          setTimeout(() => playTone(audioContext, 1000, 0.2), 200);
+          setTimeout(() => playTone(audioContext, 800, 0.2), 400);
+        } else if (type === 'success') {
+          // Sonido de éxito: dos tonos
+          playTone(audioContext, 600, 0.15);
+          setTimeout(() => playTone(audioContext, 900, 0.15), 150);
+        }
+      } catch (e) {
+        console.log('No se pudo reproducir sonido:', e);
+      }
+    }
+
+    // ── Generar tono de frecuencia específica ──
+    function playTone(audioContext, frequency, duration) {
+      try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        // Fade in y fade out
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration - 0.05);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+      } catch (e) {
+        console.log('Error al generar tono:', e);
+      }
+    }
+
     /* ═══════════════════════════════════════════════════════════════
        NOTIFICACIONES
     ═══════════════════════════════════════════════════════════════ */
     window.requestNotifPerms = async () => {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        $('btnNotify').style.display = 'none';
-        showToast('🔔 Notificaciones activadas', 'success');
-      } else {
-        showToast('Permiso de notificaciones denegado', 'warn');
+      try {
+        // Verificar si el navegador soporta notificaciones
+        if (!('Notification' in window)) {
+          showToast('⚠️ Tu navegador no soporta notificaciones', 'warn');
+          return;
+        }
+
+        // Si ya tiene permiso, no pedir de nuevo
+        if (Notification.permission === 'granted') {
+          $('btnNotify').style.display = 'none';
+          showToast('🔔 Notificaciones ya activadas', 'info');
+          return;
+        }
+
+        // Si fue denegado previamente, mostrar instrucciones
+        if (Notification.permission === 'denied') {
+          showToast('⚠️ Notificaciones denegadas. Ve a Configuración > Notificaciones y permite UniBecario', 'warn');
+          return;
+        }
+
+        // Pedir permiso
+        const perm = await Notification.requestPermission();
+        
+        if (perm === 'granted') {
+          $('btnNotify').style.display = 'none';
+          showToast('✅ Notificaciones activadas. Ahora recibirás alarmas', 'success');
+          
+          // Vibrar si es posible
+          if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+          }
+          
+          // Reproducir sonido de confirmación
+          playAlarmSound('success');
+        } else if (perm === 'denied') {
+          showToast('❌ Notificaciones denegadas. Abre Configuración > Notificaciones', 'error');
+        }
+      } catch (e) {
+        showToast('Error solicitando permiso: ' + e.message, 'error');
       }
     };
 
