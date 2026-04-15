@@ -1476,7 +1476,28 @@
           return;
         }
         if (Notification.permission === 'granted') {
-          new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+          // Intentar usar Service Worker si está disponible
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification(title, {
+                body: body,
+                icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png',
+                badge: '🔔',
+                tag: 'notification-' + Date.now()
+              });
+            }).catch(e => {
+              console.error('Error en showNotification:', e);
+              // Fallback: intentar con constructor directo
+              try {
+                new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+              } catch (err) {
+                console.error('Error dual en notify:', err);
+              }
+            });
+          } else {
+            // Fallback si no hay service worker
+            new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+          }
         }
       } catch (e) {
         console.error('Error en notify():', e);
@@ -1619,12 +1640,37 @@
         }
         
         if (Notification.permission === 'granted') {
-          new Notification(title, {
-            body: body,
-            icon: '🔔',
-            tag: 'reminder-' + Date.now(),
-            requireInteraction: true
-          });
+          // Usar Service Worker si está disponible (recomendado en mobile)
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification(title, {
+                body: body,
+                icon: '🔔',
+                badge: '⏰',
+                tag: 'reminder-' + Date.now(),
+                requireInteraction: true
+              });
+            }).catch(e => {
+              console.error('Error en showNotification reminders:', e);
+              // Fallback
+              try {
+                new Notification(title, {
+                  body: body,
+                  tag: 'reminder-' + Date.now(),
+                  requireInteraction: true
+                });
+              } catch (err) {
+                console.error('Error dual en sendScheduledNotification:', err);
+              }
+            });
+          } else {
+            // Fallback si no hay service worker
+            new Notification(title, {
+              body: body,
+              tag: 'reminder-' + Date.now(),
+              requireInteraction: true
+            });
+          }
         }
       } catch (e) {
         console.error('Error enviando notificación:', e);
