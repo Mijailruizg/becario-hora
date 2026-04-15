@@ -1571,8 +1571,11 @@
       }
     }
 
+    let reminderStartTriggered = false;
+    let reminderEndTriggered = false;
+
     function checkReminders() {
-      // Ejecutar cada minuto
+      // Ejecutar cada segundo para precisión exacta
       setInterval(() => {
         try {
           if (!currentUser) return;
@@ -1582,20 +1585,30 @@
           const currentTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
           
           // Recordatorio de inicio
-          if (reminders.start === currentTime && !isRunning) {
+          if (reminders.start === currentTime && !isRunning && !reminderStartTriggered) {
             sendScheduledNotification('Recordatorio de inicio', 'Es hora de iniciar tu jornada laboral');
             playAlarmSound();
+            reminderStartTriggered = true;
+            // Reiniciar flag después de 65 segundos para siguiente día
+            setTimeout(() => { reminderStartTriggered = false; }, 65000);
+          } else if (reminders.start !== currentTime) {
+            reminderStartTriggered = false;
           }
           
           // Recordatorio de finalización
-          if (reminders.end === currentTime && isRunning) {
+          if (reminders.end === currentTime && isRunning && !reminderEndTriggered) {
             sendScheduledNotification('Recordatorio de finalización', 'Es hora de terminar tu jornada laboral');
             playAlarmSound();
+            reminderEndTriggered = true;
+            // Reiniciar flag después de 65 segundos para siguiente día
+            setTimeout(() => { reminderEndTriggered = false; }, 65000);
+          } else if (reminders.end !== currentTime) {
+            reminderEndTriggered = false;
           }
         } catch (e) {
           console.error('Error en checkReminders:', e);
         }
-      }, 60000); // Cada minuto
+      }, 1000); // Cada segundo para máxima precisión
     }
 
     function sendScheduledNotification(title, body) {
