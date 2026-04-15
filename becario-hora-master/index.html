@@ -828,6 +828,9 @@
           <button class="btn btn-primary" id="btnStart" onclick="startJornada()">
             ▷&nbsp; Iniciar jornada
           </button>
+          <button class="btn btn-ghost" id="btnNotify" onclick="requestNotifPerms()" title="Permitir notificaciones y alarmas">
+            🔔&nbsp; Activar alarmas
+          </button>
         </div>
       </div>
 
@@ -871,6 +874,49 @@
           <div class="stat-item">
             <div class="stat-value" id="statAvg">0h</div>
             <div class="stat-label">Promedio / día</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONFIGURAR RECORDATORIOS ── -->
+      <div class="card" id="remindersCard">
+        <div class="card-header">
+          <span class="card-title">Recordatorios automáticos</span>
+        </div>
+
+        <div style="display:grid; gap:20px;">
+          <!-- Recordatorio de Inicio -->
+          <div style="padding:16px; background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <span style="font-size:18px;">▶</span>
+              <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de inicio</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="time" id="reminderStartTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
+              <button class="btn btn-sm" id="btnSaveStartReminder" onclick="saveReminder('start')" style="background:rgba(0,229,160,0.2); color:var(--accent); border:1px solid rgba(0,229,160,0.3); min-width:100px;">
+                ✓ Guardar
+              </button>
+            </div>
+            <div style="margin-top:8px; font-size:11px; color:var(--muted);">
+              Estado: <span id="reminderStartStatus">no configurado</span>
+            </div>
+          </div>
+
+          <!-- Recordatorio de Finalización -->
+          <div style="padding:16px; background:rgba(255,75,110,0.08); border:1px solid rgba(255,75,110,0.2); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <span style="font-size:18px;">⏹</span>
+              <span style="font-family:var(--sans); font-weight:600; color:var(--text);">Recordatorio de finalización</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="time" id="reminderEndTime" style="flex:1; padding:8px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mono);" />
+              <button class="btn btn-sm" id="btnSaveEndReminder" onclick="saveReminder('end')" style="background:rgba(255,75,110,0.2); color:var(--danger); border:1px solid rgba(255,75,110,0.3); min-width:100px;">
+                ✓ Guardar
+              </button>
+            </div>
+            <div style="margin-top:8px; font-size:11px; color:var(--muted);">
+              Estado: <span id="reminderEndStatus">no configurado</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1094,6 +1140,8 @@
         restoreJornada();
         // Cargar historial
         await loadHistorial();
+        // Cargar recordatorios
+        loadReminders();
       } else {
         currentUser = null;
         appEl.style.display = 'none';
@@ -1452,6 +1500,182 @@
       // Llamar a finishJornada que se encargará del resto
       await finishJornada();
     };
+
+    /* ═══════════════════════════════════════════════════════════════
+       RECORDATORIOS Y ALARMAS
+    ═══════════════════════════════════════════════════════════════ */
+    function loadReminders() {
+      try {
+        const data = localStorage.getItem('reminders') || '{}';
+        const reminders = JSON.parse(data);
+        
+        if (reminders.start) {
+          $('reminderStartTime').value = reminders.start;
+          $('reminderStartStatus').textContent = '⏰ ' + reminders.start;
+        }
+        if (reminders.end) {
+          $('reminderEndTime').value = reminders.end;
+          $('reminderEndStatus').textContent = '⏰ ' + reminders.end;
+        }
+        
+        // Iniciar chequeo de recordatorios
+        checkReminders();
+      } catch (e) {
+        console.error('Error cargando recordatorios:', e);
+      }
+    }
+
+    function saveReminder(type) {
+      try {
+        const key = type === 'start' ? 'reminderStartTime' : 'reminderEndTime';
+        const time = $(key).value;
+        
+        if (!time) {
+          showToast('Por favor selecciona una hora', 'warn');
+          return;
+        }
+
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+        if (type === 'start') {
+          reminders.start = time;
+          $('reminderStartStatus').textContent = '⏰ ' + time;
+        } else {
+          reminders.end = time;
+          $('reminderEndStatus').textContent = '⏰ ' + time;
+        }
+        
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+        showToast('Recordatorio guardado', 'success');
+      } catch (e) {
+        showToast('Error guardando recordatorio: ' + e.message, 'error');
+        console.error(e);
+      }
+    }
+
+    function cancelReminder(type) {
+      try {
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+        if (type === 'start') {
+          delete reminders.start;
+          $('reminderStartTime').value = '';
+          $('reminderStartStatus').textContent = 'no configurado';
+        } else {
+          delete reminders.end;
+          $('reminderEndTime').value = '';
+          $('reminderEndStatus').textContent = 'no configurado';
+        }
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+        showToast('Recordatorio cancelado', 'info');
+      } catch (e) {
+        console.error('Error cancelando recordatorio:', e);
+      }
+    }
+
+    function checkReminders() {
+      // Ejecutar cada minuto
+      setInterval(() => {
+        try {
+          if (!currentUser) return;
+          
+          const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+          const now = new Date();
+          const currentTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
+          
+          // Recordatorio de inicio
+          if (reminders.start === currentTime && !isRunning) {
+            sendScheduledNotification('Recordatorio de inicio', 'Es hora de iniciar tu jornada laboral');
+            playAlarmSound();
+          }
+          
+          // Recordatorio de finalización
+          if (reminders.end === currentTime && isRunning) {
+            sendScheduledNotification('Recordatorio de finalización', 'Es hora de terminar tu jornada laboral');
+            playAlarmSound();
+          }
+        } catch (e) {
+          console.error('Error en checkReminders:', e);
+        }
+      }, 60000); // Cada minuto
+    }
+
+    function sendScheduledNotification(title, body) {
+      try {
+        if (typeof Notification === 'undefined') {
+          console.log('Notification API no disponible');
+          return;
+        }
+        
+        if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body: body,
+            icon: '🔔',
+            tag: 'reminder-' + Date.now(),
+            requireInteraction: true
+          });
+        }
+      } catch (e) {
+        console.error('Error enviando notificación:', e);
+      }
+    }
+
+    function playAlarmSound() {
+      try {
+        // Crear un sonido simple de alarma usando Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800; // Hz
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      } catch (e) {
+        console.error('Error reproduciendo alarma:', e);
+      }
+    }
+
+    function requestNotifPerms() {
+      try {
+        if (typeof Notification === 'undefined') {
+          showToast('Tu navegador no soporta notificaciones', 'warn');
+          return;
+        }
+        
+        if (Notification.permission === 'granted') {
+          showToast('Ya tienes permisos de notificación', 'info');
+          return;
+        }
+        
+        if (Notification.permission === 'denied') {
+          showToast('Permisos denegados. Actívalos en configuración', 'warn');
+          return;
+        }
+        
+        // permission === 'default', pedir permisos
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            showToast('¡Permisos concedidos! Recibirás notificaciones', 'success');
+            // Cargar recordatorios después de obtener permisos
+            loadReminders();
+          } else {
+            showToast('Permisos no concedidos', 'warn');
+          }
+        }).catch(e => {
+          console.error('Error pidiendo permisos:', e);
+          showToast('Error al pedir permisos: ' + e.message, 'error');
+        });
+      } catch (e) {
+        console.error('Error en requestNotifPerms:', e);
+        showToast('Error: ' + e.message, 'error');
+      }
+    }
 
     /* ═══════════════════════════════════════════════════════════════
        UI HELPERS
