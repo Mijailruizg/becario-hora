@@ -1152,7 +1152,7 @@
         await loadReminders();
         startReminderScheduler();
         // Pedir permiso notificaciones - MOSTRAR SIEMPRE que no esté concedido
-        if (Notification.permission !== 'granted') {
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
           $('btnNotify').style.display = 'inline-flex';
         } else {
           $('btnNotify').style.display = 'none';
@@ -1183,7 +1183,7 @@
       vibrateMedium();
       
       // Mostrar notificación persistente INMEDIATAMENTE si hay permisos
-      if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
         showPersistentJornada();
         // Actualizar notificación cada 30 segundos para mostrar tiempo actualizado
         if (jornadaNotificationInterval) clearInterval(jornadaNotificationInterval);
@@ -1203,12 +1203,13 @@
         return;
       }
       
-      // Verificar permisos ANTES de continuar
-      if (!('Notification' in window)) {
-        console.log('showPersistentJornada: Notificaciones no soportadas');
+      // Verificar soporte de Notification
+      if (typeof Notification === 'undefined') {
+        console.log('showPersistentJornada: Notificaciones no soportadas en este navegador');
         return;
       }
       
+      // Verificar permisos ANTES de continuar
       if (Notification.permission !== 'granted') {
         console.log('showPersistentJornada: Permisos no concedidos', Notification.permission);
         return;
@@ -1261,9 +1262,9 @@
         startReminder();
         
         // Restaurar notificación persistente si hay jornada en progreso
-        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        if ('serviceWorker' in navigator && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           showPersistentJornada();
-          // Actualizar notificación cada 30 segundos
+          // Actualizar notificación cada 30 segundo
           jornadaNotificationInterval = setInterval(showPersistentJornada, 30000);
         }
       }
@@ -1307,6 +1308,7 @@
       // Limpiar estado INMEDIATAMENTE
       stopTimer();
       clearInterval(reminderInterval);
+      const tempStartTime = startTime; // Guardar referencia
       startTime = null;
       localStorage.removeItem('jornadaStart');
       $('description').value = '';
@@ -1341,7 +1343,7 @@
         });
 
         // Solo una notificación - usar SOLO notify si tiene permisos, o solo toast si no
-        if (Notification.permission === 'granted') {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           notify('✅ Jornada finalizada', `Trabajaste ${durStr} hoy. ¡Bien hecho!`);
         }
         showToast(`✅ Jornada guardada — ${durStr}`, 'success');
@@ -1351,14 +1353,13 @@
 
         // Recargar historial después de 1 segundo
         setTimeout(() => loadHistorial(), 1000);
+        isFinishing = false; // Permitir nuevas jornadas
       } catch (e) {
         showToast('❌ Error al guardar: ' + e.message, 'error');
         console.error('Error Firebase:', e);
         isFinishing = false; // Permitir reintento
         if (finishBtn) finishBtn.disabled = false;
-      } finally {
-        isFinishing = false; // Desbloquear para futuras jornadas
-        if (finishBtn) finishBtn.disabled = false;
+        startTime = tempStartTime; // Restaurar para reintento
       }
     };
 
@@ -1613,10 +1614,10 @@
         // Recordatorio de inicio - solo si tiene permisos de notificación
         if (startTime && currentTime === startTime && !remindersSentToday.start) {
           console.log('Enviando recordatorio DE INICIO para', startTime);
-          if (Notification.permission === 'granted') {
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             sendScheduledNotification('🟢 Hora de iniciar jornada', 'Es hora de registrar tu jornada. ¡Toca aquí para comenzar!', 'start');
           } else {
-            console.log('⚠️ Permisos de notificación no granted. Estado:', Notification.permission);
+            console.log('⚠️ Permisos de notificación no granted. Estado:', typeof Notification !== 'undefined' ? Notification.permission : 'no soportado');
           }
           remindersSentToday.start = true;
         }
@@ -1624,10 +1625,10 @@
         // Recordatorio de finalización - solo si tiene permisos de notificación
         if (endTime && currentTime === endTime && !remindersSentToday.end) {
           console.log('Enviando recordatorio DE FINALIZACIÓN para', endTime);
-          if (Notification.permission === 'granted') {
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             sendScheduledNotification('⏹ Hora de finalizar jornada', 'Es hora de finalizar y guardar tu jornada. ¡Toca aquí!', 'end');
           } else {
-            console.log('⚠️ Permisos de notificación no granted. Estado:', Notification.permission);
+            console.log('⚠️ Permisos de notificación no granted. Estado:', typeof Notification !== 'undefined' ? Notification.permission : 'no soportado');
           }
           remindersSentToday.end = true;
         }
@@ -1812,8 +1813,9 @@
     window.requestNotifPerms = async () => {
       try {
         // Verificar si el navegador soporta notificaciones
-        if (!('Notification' in window)) {
+        if (typeof Notification === 'undefined') {
           showToast('⚠️ Tu navegador no soporta notificaciones', 'warn');
+          console.log('Notification no disponible en este navegador');
           return;
         }
 
@@ -1844,17 +1846,30 @@
           
           // Reproducir sonido de confirmación
           playAlarmSound('success');
+          
+          // Iniciar recordatorios si no están ya iniciados
+          startReminderScheduler();
         } else if (perm === 'denied') {
           showToast('❌ Notificaciones denegadas. Abre Configuración > Notificaciones', 'error');
         }
       } catch (e) {
+        console.error('Error al solicitar permiso de notificaciones:', e);
         showToast('Error solicitando permiso: ' + e.message, 'error');
       }
     };
 
     function notify(title, body) {
-      if (Notification.permission === 'granted') {
-        new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+      try {
+        if (typeof Notification === 'undefined') {
+          console.log('Notification API no disponible');
+          return;
+        }
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body, icon: 'https://emoji.aranja.com/static/emoji-data/img-apple-64/23f1.png' });
+        }
+      } catch (e) {
+        console.error('Error en notify():', e);
+        // No mostrar error al usuario - es solo una notificación
       }
     }
 
