@@ -828,9 +828,6 @@
           <button class="btn btn-primary" id="btnStart" onclick="startJornada()">
             ▷&nbsp; Iniciar jornada
           </button>
-          <button class="btn btn-ghost" id="btnNotify" onclick="requestNotifPerms()" title="Permitir notificaciones y alarmas">
-            🔔&nbsp; Activar alarmas
-          </button>
         </div>
       </div>
 
@@ -1097,12 +1094,6 @@
         restoreJornada();
         // Cargar historial
         await loadHistorial();
-        // Pedir permiso notificaciones - MOSTRAR SIEMPRE que no esté concedido
-        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-          $('btnNotify').style.display = 'inline-flex';
-        } else {
-          $('btnNotify').style.display = 'none';
-        }
       } else {
         currentUser = null;
         appEl.style.display = 'none';
@@ -1429,46 +1420,6 @@
       $('statHours').textContent = totalH.toFixed(1) + 'h';
       $('statAvg').textContent   = avgH.toFixed(1) + 'h';
     }
-
-/* ═══════════════════════════════════════════════════════════════
-       NOTIFICACIONES
-    ═══════════════════════════════════════════════════════════════ */
-    window.requestNotifPerms = async () => {
-      try {
-        // Verificar si el navegador soporta notificaciones
-        if (typeof Notification === 'undefined') {
-          showToast('⚠️ Tu navegador no soporta notificaciones', 'warn');
-          console.log('Notification no disponible en este navegador');
-          return;
-        }
-
-        // Si ya tiene permiso, no pedir de nuevo
-        if (Notification.permission === 'granted') {
-          $('btnNotify').style.display = 'none';
-          showToast('🔔 Notificaciones ya activadas', 'info');
-          return;
-        }
-
-        // Si fue denegado previamente, mostrar instrucciones
-        if (Notification.permission === 'denied') {
-          showToast('⚠️ Notificaciones denegadas. Ve a Configuración > Notificaciones y permite UniBecario', 'warn');
-          return;
-        }
-
-        // Pedir permiso
-        const perm = await Notification.requestPermission();
-        
-        if (perm === 'granted') {
-          $('btnNotify').style.display = 'none';
-          showToast('✅ Notificaciones activadas', 'success');
-        } else if (perm === 'denied') {
-          showToast('❌ Notificaciones denegadas. Abre Configuración > Notificaciones', 'error');
-        }
-      } catch (e) {
-        console.error('Error al solicitar permiso de notificaciones:', e);
-        showToast('Error solicitando permiso: ' + e.message, 'error');
-      }
-    };
 
     function notify(title, body) {
       try {
